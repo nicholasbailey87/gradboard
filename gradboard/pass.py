@@ -10,7 +10,7 @@ from scipy.ndimage import gaussian_filter1d
 
 from torch.amp import GradScaler
 
-from cycles import Cycle
+from .cycles import Cycle
 
 
 class PASS:

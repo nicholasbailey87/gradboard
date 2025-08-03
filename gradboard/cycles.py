@@ -2,9 +2,8 @@
 Utilities for generating a range of learning rate schedules.
 """
 
-from re import X
 import math
-from typing import Optional, List, Union, Tuple, Callable
+from typing import Optional, List, Union, Callable
 
 
 def ascent(step: int, total_steps: int) -> float:
