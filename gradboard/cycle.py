@@ -188,8 +188,8 @@ class Cycle:
         max_area = 0
         ascent_steps = 0
         descent_steps = 0
-        total_up_gradient = 0
-        total_down_gradient = 0
+        avg_up_gradient = 0
+        avg_down_gradient = 0
         total_gradient = 0
         previous_lr = None
         for s in range(self.total_steps):
@@ -200,11 +200,11 @@ class Cycle:
                 pass
             elif previous_lr > height:
                 descent_steps += 1
-                total_down_gradient += height - previous_lr
+                avg_down_gradient += height - previous_lr
                 total_gradient += height - previous_lr
             elif previous_lr < height:
                 ascent_steps += 1
-                total_up_gradient += height - previous_lr
+                avg_up_gradient += height - previous_lr
                 total_gradient += height - previous_lr
             else:
                 total_gradient += height
@@ -213,12 +213,8 @@ class Cycle:
             "area": total_area / max_area,
             "pc_ascent": round(ascent_steps / self.total_steps, 3),
             "pc_descent": round(descent_steps / self.total_steps, 3),
-            "avg_up_gradient": round(
-                total_up_gradient / ascent_steps if ascent_steps > 0 else 0.0, 3
-            ),
-            "avg_down_gradient": round(
-                total_down_gradient / descent_steps if descent_steps > 0 else 0.0, 3
-            ),
+            "avg_up_gradient": round(avg_up_gradient, 3),
+            "avg_down_gradient": round(avg_down_gradient, 3),
             "avg_gradient": round(-(self.high - self.low) / self.total_steps, 3),
         }
 
