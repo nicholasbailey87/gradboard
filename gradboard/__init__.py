@@ -1,3 +1,3 @@
-from . import cycle
+from . import cycles
 from . import optimiser
-from . import schedule
+from . import scheduler
