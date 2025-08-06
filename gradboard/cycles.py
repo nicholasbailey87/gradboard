@@ -282,7 +282,9 @@ class CycleSequence:
         """
         cycle_ratios = [c.total_steps for c in self.cycles]
         cycle_stats = {k: v * cycle_ratios[0] for k, v in self.cycles[0].stats.items()}
-        for i, cycle in enumerate(self.cycles[1:]):
+        for i, cycle in enumerate(self.cycles):
+            if i == 0:
+                continue  # We already did the first one, above
             for k, v in cycle.stats.items():
                 cycle_stats[k] += cycle_ratios[i] * v
 
