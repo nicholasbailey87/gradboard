@@ -139,7 +139,7 @@ class PASS:
         learning_rates = [t[0] for t in range_test_results]
         losses = [t[1] for t in self.range_test_results]
         losses = losses[:-1] + [10 * max(losses)]
-        smoothed_losses = gaussian_filter1d([t[1] for t in range_test_results][:-1], 3)
+        smoothed_losses = gaussian_filter1d([t[1] for t in losses], 3)
         return list(zip(learning_rates, smoothed_losses, strict=True))
 
     def _plot_range_test(self, range_test_results):
@@ -158,8 +158,6 @@ class PASS:
         ...
         """
         range_test_results = self._smoothed_range_test(self.range_test_results)
-        self._plot_range_test(range_test_results)
-
         minimum = min(range_test_results, key=lambda x: x[1])
         points_left_of_min = [p for p in range_test_results if p[0] < minimum[0]]
         highest_point_left_of_min = max(points_left_of_min, key=lambda x: x[1])
