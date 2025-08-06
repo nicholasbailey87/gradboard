@@ -28,12 +28,9 @@ class PASS:
         max_lr: float = None,
         cool_point: float = None,
     ):
-        assert (max_lr is not None) == (cool_point is not None)
-        assert (
-            ((max_lr is not None) and (cool_point is not None))
-            != range_test
-            is not None
-        )
+        if not range_test:
+            assert max_lr is not None
+            assert cool_point is not None
 
         self.model = model
         self.optimiser = optimiser
