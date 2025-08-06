@@ -178,6 +178,7 @@ class Cycle:
 
         return list(zip(widths, heights, strict=True))
 
+    @property
     def stats(self) -> float:
         """
         Returns the area (as a percentage of the area of a curve where the learning
@@ -271,3 +272,18 @@ class CycleSequence:
 
     def __len__(self):
         return self.total_steps
+
+    @property
+    def stats(self) -> float:
+        """
+        Returns the area (as a percentage of the area of a curve where the learning
+            rate is constant max_lr), percentage ascent steps and percentage descent
+            steps of a learning rate schedule.
+        """
+        cycle_ratios = [c.total_steps for c in self.cycles]
+        cycle_stats = {k: v * cycle_ratios[0] for k, v in self.cycles[0].stats.items()}
+        for i, cycle in enumerate(self.cycles[1:]):
+            for k, v in cycle.stats.items():
+                cycle_stats[k] += cycle_ratios[i] * v
+
+        return {k: v / self.total_steps for k, v in cycle_stats.items()}
