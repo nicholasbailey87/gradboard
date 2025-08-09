@@ -221,7 +221,12 @@ class Cycle:
 
 
 class CycleProduct(Cycle):
-    def __init__(self, cycles: List[Cycle], reflect=False):
+    def __init__(self, cycles: List[Cycle], reflect=False, normalise: bool = False):
+        """
+        Args:
+            normalise: if true, the square root of the product is returned (i.e.
+                the geometric mean of the two cycles that were multiplied together)
+        """
         main_training_examples = cycles[0].training_examples
         main_batch_size = cycles[0].batch_size
 
@@ -230,11 +235,14 @@ class CycleProduct(Cycle):
 
         self.cycles = cycles
         self.reflect = reflect
+        self.normalise = normalise
 
         def generating_function(step: int, total_steps: int) -> float:
             output = self.cycles[0](step)
             for c in self.cycles[1:]:
                 output *= c(step % c.total_steps)
+            if self.normalise:
+                output = math.sqrt(output)
             return output
 
         super().__init__(
