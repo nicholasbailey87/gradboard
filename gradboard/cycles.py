@@ -37,6 +37,28 @@ def cosine(step: int, total_steps: int) -> float:
     return round((math.cos(angle) + 1) / 2, 8)
 
 
+def semicircle(step: int, total_steps: int) -> float:
+    """
+    Get a sequence of numbers between 0 and 1 in the shape of a semi-circle with
+        diameter `total_steps'.
+    """
+    assert total_steps != 0
+    x = step / (total_steps - 0.999)
+    # x^2 + y^2 = r^2 = 1
+    # Therefore y^2 = 1 - x^2
+    # Therefore y^2 = (1 + x)(1 - x)
+    y_squared = (1 - x) * (1 + x)
+    return math.sqrt(y_squared)
+
+
+def half_semicircle(step: int, total_steps: int) -> float:
+    """
+    Get a sequence of numbers between 0 and 1 in the shape of the descending
+        half of a cosine wave with wavelength 2*`total_steps`.
+    """
+    return semicircle(step, (total_steps * 2) - 1)
+
+
 def half_cosine(step: int, total_steps: int) -> float:
     """
     Get a sequence of numbers between 0 and 1 in the shape of the descending
@@ -112,19 +134,7 @@ class Cycle:
 
         self.reflect = reflect
 
-        if callable(generating_function):
-            self._generating_function = generating_function
-        elif generating_function == "ascent":
-            self._generating_function = ascent
-        elif generating_function == "triangle":
-            self._generating_function = triangle
-        elif generating_function == "cosine":
-            self._generating_function = cosine
-        elif generating_function == "half_cosine":
-            self._generating_function = half_cosine
-        elif generating_function == "half_cycloid":
-            self._generating_function = half_cycloid
-        else:
+        if not callable(generating_function):
             raise NotImplementedError(
                 "`generating_function` must be a callable object or one of "
                 '"ascent", "triangle", "cosine", "half_cosine" or "half_cycloid"'
