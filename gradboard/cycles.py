@@ -139,6 +139,8 @@ class Cycle:
                 "`generating_function` must be a callable object or one of "
                 '"ascent", "triangle", "cosine", "half_cosine" or "half_cycloid"'
             )
+        else:
+            self._generating_function = generating_function
 
     def _get_window(self, step):
         windows = self._windows()
