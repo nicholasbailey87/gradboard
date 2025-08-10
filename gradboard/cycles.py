@@ -37,7 +37,7 @@ def cosine(step: int, total_steps: int) -> float:
     return round((math.cos(angle) + 1) / 2, 8)
 
 
-def semicircle(step: int, total_steps: int) -> float:
+def quarter_circle(step: int, total_steps: int) -> float:
     """
     Get a sequence of numbers between 0 and 1 in the shape of a semi-circle with
         diameter `total_steps'.
@@ -49,14 +49,6 @@ def semicircle(step: int, total_steps: int) -> float:
     # Therefore y^2 = (1 + x)(1 - x)
     y_squared = (1 - x) * (1 + x)
     return math.sqrt(y_squared)
-
-
-def half_semicircle(step: int, total_steps: int) -> float:
-    """
-    Get a sequence of numbers between 0 and 1 in the shape of the descending
-        half of a cosine wave with wavelength 2*`total_steps`.
-    """
-    return semicircle(step, (total_steps * 2) - 1)
 
 
 def half_cosine(step: int, total_steps: int) -> float:
