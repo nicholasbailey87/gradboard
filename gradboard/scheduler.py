@@ -160,18 +160,19 @@ class PASS:
         """
         range_test_results = self._smoothed_range_test(self.range_test_results)
         minimum = min(range_test_results, key=lambda x: x[1])
+        min_loss = minimum[1]
         points_left_of_min = [p for p in range_test_results if p[0] < minimum[0]]
         highest_point_left_of_min = max(points_left_of_min, key=lambda x: x[1])
-        golden_min_loss = (highest_point_left_of_min[1] + minimum[1]) / (1 + sc.golden)
-        golden_max_loss = (highest_point_left_of_min[1] + minimum[1]) / sc.golden
+        loss_difference = highest_point_left_of_min[1] - minimum[1]
+        cool_point_loss = min_loss + 0.75 * loss_difference
+        max_lr_loss = min_loss + 0.25 * loss_difference
         for r in range_test_results:
-            if r[1] < golden_max_loss:
+            if r[1] < cool_point_loss:
                 self.cool_point = r[0]
                 break
         for r in range_test_results:
-            if r[1] < golden_min_loss:
+            if r[1] >= max_lr_loss:
                 self.max_lr = r[0]
-            else:
                 break
         print("High LR", self.max_lr)
         print("Cool point", self.cool_point)
