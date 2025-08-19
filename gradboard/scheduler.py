@@ -7,6 +7,7 @@ import copy
 import math
 
 from scipy.ndimage import gaussian_filter1d
+import scipy.constants as sc
 
 from torch.amp import GradScaler
 
@@ -161,9 +162,9 @@ class PASS:
         minimum = min(range_test_results, key=lambda x: x[1])
         points_left_of_min = [p for p in range_test_results if p[0] < minimum[0]]
         highest_point_left_of_min = max(points_left_of_min, key=lambda x: x[1])
-        halfway = (highest_point_left_of_min[1] + minimum[1]) / 2
+        golden_step = (highest_point_left_of_min[1] + minimum[1]) / sc.golden
         for r in range_test_results:
-            if r[1] < halfway:
+            if r[1] < golden_step:
                 self.max_lr = r[0] * 3
                 self.cool_point = r[0] / 3
                 print("High LR", self.max_lr)
