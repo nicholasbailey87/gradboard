@@ -171,7 +171,7 @@ class PASS:
                 self.cool_point = r[0]
                 break
         for r in range_test_results:
-            if r[1] >= max_lr_loss:
+            if r[1] <= max_lr_loss:
                 self.max_lr = r[0]
                 break
         print("High LR", self.max_lr)
