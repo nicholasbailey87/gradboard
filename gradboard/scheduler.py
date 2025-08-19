@@ -160,19 +160,21 @@ class PASS:
         """
         range_test_results = self._smoothed_range_test(self.range_test_results)
         minimum = min(range_test_results, key=lambda x: x[1])
-        self.max_lr = minimum[0] / sc.golden
-        self.cool_point = self.max_lr / 100
-        # self.cool_point = r[0] / 3
-        # points_left_of_min = [p for p in range_test_results if p[0] < minimum[0]]
-        # highest_point_left_of_min = max(points_left_of_min, key=lambda x: x[1])
-        # halfway = (highest_point_left_of_min[1] + minimum[1]) / 2
-        # for r in range_test_results:
-        #     if r[1] < halfway:
-        #         self.max_lr = r[0] * 3
-        #         self.cool_point = r[0] / 3
-        #         print("High LR", self.max_lr)
-        #         print("Cool point", self.cool_point)
-        #         break
+        points_left_of_min = [p for p in range_test_results if p[0] < minimum[0]]
+        highest_point_left_of_min = max(points_left_of_min, key=lambda x: x[1])
+        golden_min_loss = (highest_point_left_of_min[1] + minimum[1]) / (1 + sc.golden)
+        golden_max_loss = (highest_point_left_of_min[1] + minimum[1]) / sc.golden
+        for r in range_test_results:
+            if r[1] < golden_max_loss:
+                self.cool_point = r[0]
+                break
+        for r in range_test_results:
+            if r[1] < golden_min_loss:
+                self.max_lr = r[0]
+            else:
+                break
+        print("High LR", self.max_lr)
+        print("Cool point", self.cool_point)
 
     def update_learning_rates(self):
         if self.finished:
