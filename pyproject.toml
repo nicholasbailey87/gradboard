@@ -1,6 +1,6 @@
 [project]
 name = "gradboard"
-version = "0.1.18"
+version = "0.1.19"
 description = "Easily snowboard down gnarly loss gradients"
 authors = [
     {name = "Nicholas Bailey"}

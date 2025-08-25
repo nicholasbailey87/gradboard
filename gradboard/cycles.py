@@ -48,7 +48,12 @@ def quarter_circle(step: int, total_steps: int) -> float:
     # Therefore y^2 = 1 - x^2
     # Therefore y^2 = (1 + x)(1 - x)
     y_squared = (1 - x) * (1 + x)
-    return math.sqrt(y_squared)
+    try:
+        return math.sqrt(y_squared)
+    except ValueError:
+        print("total_steps: ", total_steps)
+        print("step: ", total_steps)
+        raise ValueError("Still broken!") from None
 
 
 def half_cosine(step: int, total_steps: int) -> float:
