@@ -47,7 +47,7 @@ def quarter_circle(step: int, total_steps: int) -> float:
     # x^2 + y^2 = r^2 = 1
     # Therefore y^2 = 1 - x^2
     # Therefore y^2 = (1 + x)(1 - x)
-    y_squared = max(1 - x) * (1 + x)
+    y_squared = max(1 - x, 0) * (1 + x)
     try:
         return math.sqrt(y_squared)
     except ValueError:
