@@ -168,11 +168,11 @@ class PASS:
         max_lr_loss = min_loss + 0.25 * loss_difference
         for r in range_test_results:
             if r[1] < cool_point_loss:
-                self.cool_point = r[0]
+                self.cool_point = r[0] * sc.golden
                 break
         for r in range_test_results:
             if r[1] <= max_lr_loss:
-                self.max_lr = r[0]
+                self.max_lr = r[0] / sc.golden
                 break
         print("High LR", self.max_lr)
         print("Cool point", self.cool_point)
