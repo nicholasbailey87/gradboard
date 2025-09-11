@@ -129,7 +129,7 @@ class AdamS(Optimizer):
         return loss
 
 
-def get_optimiser(model, optimiser=AdamW, lr=7e-4, weight_decay=5e-2):
+def get_optimiser(model, optimiser=AdamW, lr=1e-3, weight_decay=1e-2):
     """
     Defaults are from one of the presets from the accompanying repo to Hassani
         et al. (2023) "Escaping the Big Data Paradigm with Compact Transformers",
