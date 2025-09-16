@@ -159,23 +159,16 @@ class PASS:
         """
         range_test_results = self._smoothed_range_test(self.range_test_results)
         minimum = min(range_test_results, key=lambda x: x[1])
-        max_left_of_min = (0, 0)
-        for r in range_test_results:
-            if r[0] > minimum[0]:
-                break
-            elif r[1] > max_left_of_min[1]:
-                max_left_of_min = r
-            else:
-                continue
-        difference = max_left_of_min[1] - minimum[1]
         points_left_of_min = [r for r in range_test_results if r[0] < minimum[0]]
+        max_left_of_min = max(points_left_of_min, key=lambda x: x[1])
+        difference = max_left_of_min[1] - minimum[1]
         self.max_lr = None
         self.cool_point = None
-        for p in points_left_of_min:
-            if (self.cool_point is None) and (p[1] > minimum[1] + 0.66 * difference):
-                self.cool_point = r[0]
-            elif (self.max_lr is None) and (p[1] > minimum[1] + 0.33 * difference):
-                self.max_lr = r[0]
+        for p in sorted(points_left_of_min, key=lambda x: x[0]):
+            if (self.cool_point is None) and (p[1] < minimum[1] + 0.66 * difference):
+                self.cool_point = p[0]
+            elif (self.max_lr is None) and (p[1] < minimum[1] + 0.33 * difference):
+                self.max_lr = p[0]
             else:
                 continue
         self.cool_point = min(self.cool_point, self.max_lr / 4)
