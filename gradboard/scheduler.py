@@ -168,10 +168,13 @@ class PASS:
             else:
                 continue
         difference = max_left_of_min[1] - minimum[1]
-        for r in range_test_results:
-            if r[1] > minimum[1] + 0.66 * difference:
+        points_left_of_min = [r for r in range_test_results if r[0] < minimum[0]]
+        self.max_lr = None
+        self.cool_point = None
+        for p in points_left_of_min:
+            if (self.cool_point is None) and (p[1] > minimum[1] + 0.66 * difference):
                 self.cool_point = r[0]
-            elif r[1] > minimum[1] + 0.33 * difference:
+            elif (self.max_lr is None) and (p[1] > minimum[1] + 0.33 * difference):
                 self.max_lr = r[0]
             else:
                 continue
