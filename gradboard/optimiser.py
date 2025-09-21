@@ -142,9 +142,7 @@ def get_optimiser(model, optimiser=AdamW, lr=1e-3, weight_decay=1e-2):
         "norm",
         "embedding",
         "swiglu_beta",
-        "sigma",
-        "scale",
-        "input_query",
+        "sigma_reparam" "input_query",
         "reentrant_query",
     ]:
         weight_decay_exclude += [
