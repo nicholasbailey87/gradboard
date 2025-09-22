@@ -139,6 +139,7 @@ def get_optimiser(model, optimiser=AdamW, lr=1e-3, weight_decay=1e-2):
     # TODO: print a warning when params are excluded from weight decay IFF wd is set
     weight_decay_exclude = []
     for keyword in [
+        "nondecay",
         "bias",
         "norm",
         "embedding",
