@@ -136,13 +136,13 @@ def get_optimiser(model, optimiser=AdamW, lr=1e-3, weight_decay=1e-2):
         https://github.com/SHI-Labs/Compact-Transformers/blob/main/configs/
         pretrained/cct_7-3x1_cifar100_1500epochs.yml
     """
+    # TODO: print a warning when params are excluded from weight decay IFF wd is set
     weight_decay_exclude = []
     for keyword in [
         "bias",
         "norm",
         "embedding",
-        "swiglu_beta",
-        "sigma_reparam",
+        "beta",
         "input_query",
         "reentrant_query",
     ]:
