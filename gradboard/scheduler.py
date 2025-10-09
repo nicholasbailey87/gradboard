@@ -165,13 +165,11 @@ class PASS:
         self.max_lr = None
         self.cool_point = None
         for p in sorted(points_left_of_min, key=lambda x: x[0]):
-            if (self.cool_point is None) and (p[1] < minimum[1] + 0.66 * difference):
-                self.cool_point = p[0]
-            elif (self.max_lr is None) and (p[1] < minimum[1] + 0.33 * difference):
+            if (self.max_lr is None) and (p[1] < minimum[1] + 0.2 * difference):
                 self.max_lr = p[0]
             else:
                 continue
-        self.cool_point = min(self.cool_point, self.max_lr / 4)
+        self.cool_point = self.max_lr / 60
         print("High LR", self.max_lr)
         print("Cool point", self.cool_point)
 
