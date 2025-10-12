@@ -25,11 +25,12 @@ class PASS:
         optimiser,
         scaler: Optional[GradScaler] = None,
         range_test: bool = False,
-        max_lr: float = None,
         cool_point_multiplier: float = 1 / 60,
     ):
-        if not range_test:
-            assert max_lr is not None
+        """
+        If not using range test, we assume the optimiser has the learning rates
+            set as desired.
+        """
 
         self.model = model
         self.optimiser = optimiser
@@ -41,7 +42,6 @@ class PASS:
 
         self.original_param_groups = copy.deepcopy(optimiser.param_groups)
 
-        self.max_lr = max_lr
         self.cool_point_multiplier = cool_point_multiplier
 
         self.original_states = self._saved_states()
@@ -160,15 +160,15 @@ class PASS:
         points_left_of_min = [r for r in range_test_results if r[0] < minimum[0]]
         max_left_of_min = max(points_left_of_min, key=lambda x: x[1])
         difference = max_left_of_min[1] - minimum[1]
-        self.max_lr = None
+        max_lr = None
         for p in sorted(points_left_of_min, key=lambda x: x[0]):
-            if (self.max_lr is None) and (p[1] < minimum[1] + 0.2 * difference):
-                self.max_lr = p[0]
+            if (max_lr is None) and (p[1] < minimum[1] + 0.2 * difference):
+                max_lr = p[0]
             else:
                 continue
-        self.set_all_lr(self.max_lr)
+        self.set_all_lr(max_lr)
         self.original_param_groups = copy.deepcopy(self.optimiser.param_groups)
-        print("High LR", self.max_lr)
+        print("High LR", max_lr)
 
     def update_learning_rates(self):
         if not self.finished:
