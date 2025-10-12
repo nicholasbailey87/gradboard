@@ -24,13 +24,12 @@ class PASS:
         model,
         optimiser,
         scaler: Optional[GradScaler] = None,
-        range_test: bool = True,
+        range_test: bool = False,
         max_lr: float = None,
-        cool_point: float = None,
+        cool_point_multiplier: float = 1 / 60,
     ):
         if not range_test:
             assert max_lr is not None
-            assert cool_point is not None
 
         self.model = model
         self.optimiser = optimiser
@@ -40,8 +39,10 @@ class PASS:
 
         self.range_test = range_test
 
+        self.original_param_groups = copy.deepcopy(optimiser.param_groups)
+
         self.max_lr = max_lr
-        self.cool_point = cool_point
+        self.cool_point_multiplier = cool_point_multiplier
 
         self.original_states = self._saved_states()
 
@@ -56,7 +57,8 @@ class PASS:
     def lr(self):
         """
         Return first lr from self.optimiser.param_groups
-            (we assume they are all the same!)
+            (this is used in learning rate range tests, in which case we can
+            assume they are all the same!)
         """
         for group in self.optimiser.param_groups:
             return group["lr"]
@@ -107,28 +109,24 @@ class PASS:
         self.load_states(self.saved_states)
 
     @property
-    def _schedule_lr(self):
-        return (
-            self.learning_rate_schedule(
-                min(self.step_count, self.learning_rate_schedule.total_steps)
-            )
-            * (self.max_lr - self.cool_point)
-            + self.cool_point
+    def _schedule_multiplier(self):
+        return self.learning_rate_schedule(
+            min(self.step_count, self.learning_rate_schedule.total_steps)
         )
 
-    def set_lr(self, lr):
+    def set_all_lr(self, lr):
         for group in self.optimiser.param_groups:
             group["lr"] = lr
-
-    def scale_lr(self, scaling_factor):
-        self.set_lr(self.lr * scaling_factor)
 
     def start_range_test(self):
         self.save_states()
         self.optimiser.load_state_dict(self.original_states["optimiser"])
         if self.scaler is not None:
             self.scaler.load_state_dict(self.original_states["scaler"])
-        self.set_lr(1e-7)
+        self.set_all_lr(1e-7)
+
+    def scale_all_lr(self, scaling_factor):
+        self.set_all_lr(self.lr * scaling_factor)
 
     def end_range_test(self):
         self.recover_states()
@@ -163,21 +161,24 @@ class PASS:
         max_left_of_min = max(points_left_of_min, key=lambda x: x[1])
         difference = max_left_of_min[1] - minimum[1]
         self.max_lr = None
-        self.cool_point = None
         for p in sorted(points_left_of_min, key=lambda x: x[0]):
             if (self.max_lr is None) and (p[1] < minimum[1] + 0.2 * difference):
                 self.max_lr = p[0]
             else:
                 continue
-        self.cool_point = self.max_lr / 60
+        self.set_all_lr(self.max_lr)
+        self.original_param_groups = copy.deepcopy(self.optimiser.param_groups)
         print("High LR", self.max_lr)
-        print("Cool point", self.cool_point)
 
     def update_learning_rates(self):
-        if self.finished:
-            pass
-        else:
-            self.set_lr(self._schedule_lr)
+        if not self.finished:
+            for original, current in zip(
+                self.original_param_groups, self.optimiser.param_groups, strict=True
+            ):
+                base_lr = original["lr"]
+                min_lr = base_lr * self.cool_point_multiplier
+                current_lr = min_lr + (base_lr - min_lr) * self._schedule_multiplier
+                current["lr"] = current_lr
 
     def _append_to_range_test(self, loss_item: float):
 
@@ -188,7 +189,7 @@ class PASS:
             self.end_range_test()
         else:
             # Continue range test, step up learning rate
-            self.scale_lr(1.05)
+            self.scale_all_lr(1.05)
 
     def step(self, loss_item: float):
         """
