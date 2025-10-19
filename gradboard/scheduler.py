@@ -6,8 +6,6 @@ from typing import Optional
 import copy
 import math
 
-from scipy.ndimage import gaussian_filter1d
-
 from torch.amp import GradScaler
 
 from .cycles import Cycle
@@ -137,8 +135,7 @@ class PASS:
         learning_rates = [t[0] for t in range_test_results]
         losses = [t[1] for t in self.range_test_results]
         losses = losses[:-1] + [10 * max(losses)]
-        smoothed_losses = gaussian_filter1d(losses, 3)
-        return list(zip(learning_rates, smoothed_losses, strict=True))
+        return list(zip(learning_rates, losses, strict=True))
 
     def _plot_range_test(self, range_test_results):
         """
