@@ -32,28 +32,25 @@ def cosine(step: int, total_steps: int) -> float:
     Get a sequence of numbers between 0 and 1 in the shape of a cosine wave with
         wavelength `total_steps`.
     """
-    assert total_steps != 0
+    if total_steps < 1:
+        raise ValueError(f"total_steps must be >= 1, got {total_steps}")
     angle = (step / (total_steps - 0.999)) * (2 * math.pi)
     return round((math.cos(angle) + 1) / 2, 8)
 
 
 def quarter_circle(step: int, total_steps: int) -> float:
     """
-    Get a sequence of numbers between 0 and 1 in the shape of a semi-circle with
-        diameter `total_steps'.
+    Get a sequence of numbers between 0 and 1 in the shape of a quarter-circle with
+        radius `total_steps'.
     """
-    assert total_steps != 0
-    x = step / (total_steps - 0.999)
+    if total_steps < 1:
+        raise ValueError(f"total_steps must be >= 1, got {total_steps}")
+    x = 0 if total_steps == 1 else step / (total_steps - 1)
     # x^2 + y^2 = r^2 = 1
     # Therefore y^2 = 1 - x^2
     # Therefore y^2 = (1 + x)(1 - x)
     y_squared = max(1 - x, 0) * (1 + x)
-    try:
-        return math.sqrt(y_squared)
-    except ValueError:
-        print("total_steps: ", total_steps)
-        print("step: ", total_steps)
-        raise ValueError("Still broken!") from None
+    return math.sqrt(y_squared)
 
 
 def half_cosine(step: int, total_steps: int) -> float:
@@ -97,6 +94,16 @@ def half_cycloid(step: int, total_steps: int) -> float:
     return cycloid(total_steps + step, 2 * total_steps)
 
 
+FN_LIBRARY = {
+    "ascent": ascent,
+    "triangle": triangle,
+    "cosine": cosine,
+    "half_cosine": half_cosine,
+    "quarter_circle": quarter_circle,
+    "half_cycloid": half_cycloid,
+}
+
+
 class Cycle:
     def __init__(
         self,
@@ -132,16 +139,8 @@ class Cycle:
         self.reflect = reflect
 
         if not callable(generating_function):
-            function_library = {
-                "ascent": ascent,
-                "triangle": triangle,
-                "cosine": cosine,
-                "half_cosine": half_cosine,
-                "quarter_circle": quarter_circle,
-                "half_cycloid": half_cycloid,
-            }
-            if generating_function in function_library:
-                self._generating_function = function_library[generating_function]
+            if generating_function in FN_LIBRARY:
+                self._generating_function = FN_LIBRARY[generating_function]
             else:
                 raise NotImplementedError(
                     "`generating_function` must be a callable object or one of "

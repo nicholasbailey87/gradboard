@@ -179,16 +179,18 @@ class PASS:
 
     def _append_to_range_test(self, loss_item: float):
 
-        self.range_test_results.append((self.lr, loss_item))
+        lr = self.lr
 
-        if math.isnan(loss_item):
+        self.range_test_results.append((lr, loss_item))
+
+        if math.isnan(loss_item) or (lr >= 1.0):
             self._apply_range_test_result()
             self.end_range_test()
         else:
             # Continue range test, step up learning rate
             self.scale_all_lr(1.05)
 
-    def step(self, loss_item: float):
+    def step(self, loss_item: Optional[float] = None):
         """
         This function manages the process of
             * Doing an initial range test
@@ -199,7 +201,11 @@ class PASS:
             * Updating learning rates during training according to the macrocycle
         """
         if self.in_range_test:  # True at init unless self.range_test = False
-            assert self.step_count == 0  # No weight updates yet
+            if not isinstance(loss_item, float):
+                raise ValueError(
+                    "When using range test functionality, "
+                    "`step()` expects a loss item."
+                )
             self._append_to_range_test(loss_item)
         elif self.trained and not self.finished:
             self.step_count += 1
