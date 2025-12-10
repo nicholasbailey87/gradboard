@@ -132,10 +132,22 @@ class Cycle:
         self.reflect = reflect
 
         if not callable(generating_function):
-            raise NotImplementedError(
-                "`generating_function` must be a callable object or one of "
-                '"ascent", "triangle", "cosine", "half_cosine" or "half_cycloid"'
-            )
+            function_library = {
+                "ascent": ascent,
+                "triangle": triangle,
+                "cosine": cosine,
+                "half_cosine": half_cosine,
+                "quarter_circle": quarter_circle,
+                "half_cycloid": half_cycloid,
+            }
+            if generating_function in function_library:
+                self._generating_function = function_library[generating_function]
+            else:
+                raise NotImplementedError(
+                    "`generating_function` must be a callable object or one of "
+                    '"ascent", "triangle", "cosine", "half_cosine", "quarter_circle" '
+                    'or "half_cycloid"'
+                )
         else:
             self._generating_function = generating_function
 
