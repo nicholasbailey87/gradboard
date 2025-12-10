@@ -32,7 +32,7 @@ def get_optimiser(
     if len(weight_decay_exclude) > 0:
         warnings.warn(
             "Excluded the following parameters from weight decay based on "
-            "exclude keywords: {weight_decay_exclude}",
+            f"exclude keywords: {weight_decay_exclude}",
             stacklevel=2,
         )
 
