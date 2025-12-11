@@ -44,6 +44,8 @@ class PASS:
 
         self.step_count = 0
 
+        self.range_test_results = []
+
         if self.range_test:
             self.start_range_test()  # sets LR to 1E-7
 
@@ -81,18 +83,6 @@ class PASS:
     def finished(self):
         return self.step_count >= len(self.learning_rate_schedule) - 1
 
-    def state_dict(self):
-        saved_states = {
-            "model": copy.deepcopy(self.model.state_dict()),
-            "optimiser": copy.deepcopy(self.optimiser.state_dict()),
-        }
-        if self.scaler is not None:
-            saved_states["scaler"] = copy.deepcopy(self.scaler.state_dict())
-        return saved_states
-
-    def save_states(self):
-        self.saved_states = self.state_dict()
-
     def clean_model_state_dict(self, state_dict):
         new_state_dict = {}
         for k, v in state_dict.items():
@@ -102,14 +92,48 @@ class PASS:
                 new_state_dict[k] = v
         return new_state_dict
 
-    def load_state_dict(self, state_dict):
-        self.model.load_state_dict(self.clean_model_state_dict(state_dict["model"]))
-        self.optimiser.load_state_dict(state_dict["optimiser"])
+    def _current_states(self):
+        saved_states = {
+            "model": copy.deepcopy(
+                self.clean_model_state_dict(self.model.state_dict())
+            ),
+            "optimiser": copy.deepcopy(self.optimiser.state_dict()),
+        }
         if self.scaler is not None:
-            self.scaler.load_state_dict(state_dict["scaler"])
+            saved_states["scaler"] = copy.deepcopy(self.scaler.state_dict())
+        return saved_states
+
+    def save_states(self):
+        self.saved_states = self._current_states()
+
+    def load_states(self, states: dict):
+        self.model.load_state_dict(self.clean_model_state_dict(states["model"]))
+        self.optimiser.load_state_dict(states["optimiser"])
+        if self.scaler is not None:
+            self.scaler.load_state_dict(states["scaler"])
 
     def recover_states(self):
-        self.load_state_dict(self.saved_states)
+        self.load_states(self.saved_states)
+
+    def state_dict(self):
+        return {
+            "model": self.model.state_dict(),
+            "optimiser": self.optimiser.state_dict(),
+            "scaler": self.scaler.state_dict() if self.scaler is not None else None,
+            "range_test": self.range_test,
+            "range_test_results": self.range_test_results,
+            "original_param_groups": self.original_param_groups,
+            "cool_point_multiplier": self.cool_point_multiplier,
+            "step_count": self.step_count,
+        }
+
+    def load_state_dict(self, state_dict):
+        self.load_states(state_dict)
+        self.range_test = state_dict["range_test"]
+        self.range_test_results = state_dict["range_test_results"]
+        self.original_param_groups = state_dict["original_param_groups"]
+        self.cool_point_multiplier = state_dict["cool_point_multiplier"]
+        self.step_count = state_dict["step_count"]
 
     @property
     def _schedule_multiplier(self):
