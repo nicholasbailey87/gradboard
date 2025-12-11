@@ -20,28 +20,32 @@ def get_optimiser(
         https://github.com/SHI-Labs/Compact-Transformers/blob/main/configs/
         pretrained/cct_7-3x1_cifar100_1500epochs.yml
     """
-    weight_decay_exclude = []
+    weight_decay_exclude_params = []
+    weight_decay_exclude_names = []
 
     for keyword in exclude_keywords:
-        weight_decay_exclude += [
+        weight_decay_exclude_params += [
             p for name, p in model.named_parameters() if keyword in name.lower()
         ]
+        weight_decay_exclude_names += [
+            name for name, p in model.named_parameters() if keyword in name.lower()
+        ]
 
-    weight_decay_exclude = set(weight_decay_exclude)
+    weight_decay_exclude_params = set(weight_decay_exclude_params)
 
-    if len(weight_decay_exclude) > 0:
+    if len(weight_decay_exclude_params) > 0:
         warnings.warn(
             "Excluded the following parameters from weight decay based on "
-            f"exclude keywords: {weight_decay_exclude}",
+            f"exclude keywords: {set(weight_decay_exclude_names)}",
             stacklevel=2,
         )
 
-    weight_decay_include = set(model.parameters()) - weight_decay_exclude
+    weight_decay_include = set(model.parameters()) - weight_decay_exclude_params
 
     return optimiser(
         [
             {"params": list(weight_decay_include)},
-            {"params": list(weight_decay_exclude), "weight_decay": 0.0},
+            {"params": list(weight_decay_exclude_params), "weight_decay": 0.0},
         ],
         weight_decay=weight_decay,
         lr=lr,
