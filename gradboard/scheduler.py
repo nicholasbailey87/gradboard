@@ -30,6 +30,15 @@ class PASS:
             set as desired.
         """
 
+        if type(model).__name__ == "OptimizedModule":
+            raise ValueError(
+                "PASS received a compiled model. You must initialize PASS with the "
+                "raw model *before* calling torch.compile().\n"
+                "Correct order:\n"
+                "  scheduler = PASS(..., model, ...)\n"
+                "  model = torch.compile(model)"
+            )
+
         self.model = model
         self.optimiser = optimiser
         self.scaler = scaler
