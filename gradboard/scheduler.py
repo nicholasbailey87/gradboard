@@ -42,13 +42,9 @@ class PASS:
 
         self.cool_point_multiplier = cool_point_multiplier
 
-        self.original_states = self._saved_states()
-
-        self.range_test_results = []
-
         self.step_count = 0
 
-        if range_test:
+        if self.range_test:
             self.start_range_test()  # sets LR to 1E-7
 
     @property
@@ -85,7 +81,7 @@ class PASS:
     def finished(self):
         return self.step_count >= len(self.learning_rate_schedule) - 1
 
-    def _saved_states(self):
+    def state_dict(self):
         saved_states = {
             "model": copy.deepcopy(self.model.state_dict()),
             "optimiser": copy.deepcopy(self.optimiser.state_dict()),
@@ -95,16 +91,25 @@ class PASS:
         return saved_states
 
     def save_states(self):
-        self.saved_states = self._saved_states()
+        self.saved_states = self.state_dict()
 
-    def load_states(self, saved_states):
-        self.model.load_state_dict(saved_states["model"])
-        self.optimiser.load_state_dict(saved_states["optimiser"])
+    def clean_model_state_dict(self, state_dict):
+        new_state_dict = {}
+        for k, v in state_dict.items():
+            if k.startswith("_orig_mod."):
+                new_state_dict[k[10:]] = v  # Strip the "_orig_mod." prefix (length 10)
+            else:
+                new_state_dict[k] = v
+        return new_state_dict
+
+    def load_state_dict(self, state_dict):
+        self.model.load_state_dict(self.clean_model_state_dict(state_dict["model"]))
+        self.optimiser.load_state_dict(state_dict["optimiser"])
         if self.scaler is not None:
-            self.scaler.load_state_dict(saved_states["scaler"])
+            self.scaler.load_state_dict(state_dict["scaler"])
 
     def recover_states(self):
-        self.load_states(self.saved_states)
+        self.load_state_dict(self.saved_states)
 
     @property
     def _schedule_multiplier(self):
@@ -117,10 +122,9 @@ class PASS:
             group["lr"] = lr
 
     def start_range_test(self):
+        self.range_test = True
+        self.range_test_results = []
         self.save_states()
-        self.optimiser.load_state_dict(self.original_states["optimiser"])
-        if self.scaler is not None:
-            self.scaler.load_state_dict(self.original_states["scaler"])
         self.set_all_lr(1e-7)
 
     def scale_all_lr(self, scaling_factor):
@@ -133,7 +137,7 @@ class PASS:
     def _smoothed_range_test(self, range_test_results):
         range_test_results = sorted(range_test_results, key=lambda x: x[0])
         learning_rates = [t[0] for t in range_test_results]
-        losses = [t[1] for t in self.range_test_results]
+        losses = [t[1] for t in range_test_results]
         losses = losses[:-1] + [10 * max(losses)]
         return list(zip(learning_rates, losses, strict=True))
 
