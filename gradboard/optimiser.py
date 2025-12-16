@@ -7,6 +7,20 @@ from torch.optim import AdamW
 EXCLUDE_FROM_WEIGHT_DECAY = ["nondecay", "bias", "norm", "embedding", "beta"]
 
 
+def register_optimiser_recursive(module, optimizer):
+    """
+    Recursively walks the module tree and registers the optimiser
+        with any layer that supports .register_optimiser()
+    """
+    # Check if the module itself has the method
+    if hasattr(module, "register_optimiser") and callable(module.register_optimiser):
+        module.register_optimiser(optimizer)
+
+    # Recursively check children
+    for child in module.children():
+        register_optimiser_recursive(child, optimizer)
+
+
 def get_optimiser(
     model,
     optimiser=AdamW,
