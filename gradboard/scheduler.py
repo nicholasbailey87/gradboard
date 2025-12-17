@@ -53,6 +53,8 @@ class PASS:
 
         self.step_count = 0
 
+        self.update_learning_rates()
+
         self.range_test_results = []
 
         if self.range_test:
