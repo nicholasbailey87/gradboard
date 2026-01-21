@@ -26,13 +26,12 @@ def get_optimiser(
     optimiser=AdamW,
     lr=1e-3,
     weight_decay=1e-2,
+    eps=1e-10,
     exclude_keywords=EXCLUDE_FROM_WEIGHT_DECAY,
 ):
     """
-    Defaults are from one of the presets from the accompanying repo to Hassani
-        et al. (2023) "Escaping the Big Data Paradigm with Compact Transformers",
-        https://github.com/SHI-Labs/Compact-Transformers/blob/main/configs/
-        pretrained/cct_7-3x1_cifar100_1500epochs.yml
+    Moved away from PyTorch default eps, per
+    https://sifal.social/posts/The-Epsilon-Trap-When-Adam-Stops-Being-Adam/
     """
     weight_decay_exclude_params = []
     weight_decay_exclude_names = []
@@ -63,4 +62,5 @@ def get_optimiser(
         ],
         weight_decay=weight_decay,
         lr=lr,
+        eps=eps,
     )
