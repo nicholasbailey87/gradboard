@@ -26,14 +26,10 @@ def get_optimiser(
     optimiser=AdamW,
     lr=1e-3,
     weight_decay=1e-2,
-    eps=1e-6,
+    eps=1e-8,  # It's surprisingly impactful and the Pytorch default works fine!
     exclude_keywords=EXCLUDE_FROM_WEIGHT_DECAY,
 ):
-    """
-    Moved away from PyTorch default eps. Tried 1e-10 per
-    https://sifal.social/posts/The-Epsilon-Trap-When-Adam-Stops-Being-Adam/
-    and it was really bad. Now trying 1E-6 per RoBERTa.
-    """
+    """ """
     weight_decay_exclude_params = []
     weight_decay_exclude_names = []
 
