@@ -122,6 +122,7 @@ class PASS:
         self.optimiser.load_state_dict(states["optimiser"])
         if self.scaler is not None:
             self.scaler.load_state_dict(states["scaler"])
+        self.update_learning_rates()
 
     def recover_states(self):
         self.load_states(self.saved_states)
