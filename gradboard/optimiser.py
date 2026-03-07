@@ -1,5 +1,7 @@
 import math
 import warnings
+from collections import defaultdict
+
 import torch
 from torch.optim.optimizer import Optimizer
 from torch.optim import AdamW
@@ -23,13 +25,19 @@ def register_optimiser_recursive(module, optimizer):
 
 def get_optimiser(
     model,
+    d_base_model=None,
     optimiser=AdamW,
     lr=1e-3,
     weight_decay=1e-2,
-    eps=1e-8,  # It's surprisingly impactful and the Pytorch default works fine!
+    eps=1e-8,
     exclude_keywords=EXCLUDE_FROM_WEIGHT_DECAY,
 ):
-    """ """
+    """
+    Set up an optimiser for a transformer model, excluding appropriate submodules
+        from weight decay and scaling up weight decay for tensors that have scaled
+        from `d_base_model`
+    """
+
     weight_decay_exclude_params = []
     weight_decay_exclude_names = []
 
@@ -38,7 +46,7 @@ def get_optimiser(
             p for name, p in model.named_parameters() if keyword in name.lower()
         ]
         weight_decay_exclude_names += [
-            name for name, p in model.named_parameters() if keyword in name.lower()
+            name for name, _ in model.named_parameters() if keyword in name.lower()
         ]
 
     weight_decay_exclude_params = set(weight_decay_exclude_params)
@@ -50,14 +58,42 @@ def get_optimiser(
             stacklevel=2,
         )
 
-    weight_decay_include = set(model.parameters()) - weight_decay_exclude_params
+    weight_decay_include = [
+        p for p in model.parameters() if p not in weight_decay_exclude_params
+    ]
+
+    weight_decay_levels = defaultdict(list)
+    weight_decay_levels[0.0] = [
+        p for p in model.parameters() if p in weight_decay_exclude_params
+    ]
+
+    for p in weight_decay_include:
+        if len(p.size()) == 2:
+            width = max(p.size())
+            if d_base_model is not None:
+                scaling_factor = math.sqrt(width) / math.sqrt(d_base_model)
+            else:
+                scaling_factor = 1
+            adjusted_weight_decay = scaling_factor * weight_decay
+            weight_decay_levels[adjusted_weight_decay].append(p)
+        else:
+            weight_decay_levels[0.0].append(p)
+
+    default_weight_decay = max(
+        weight_decay_levels.keys(), key=lambda x: len(weight_decay_levels[x])
+    )
+
+    parameter_groups = []
+
+    for k, v in weight_decay_levels.items():
+        if k != default_weight_decay:
+            parameter_groups.append({"params": v, "weight_decay": k})
+
+    parameter_groups.append({"params": weight_decay_levels[default_weight_decay]})
 
     return optimiser(
-        [
-            {"params": list(weight_decay_include)},
-            {"params": list(weight_decay_exclude_params), "weight_decay": 0.0},
-        ],
-        weight_decay=weight_decay,
+        parameter_groups,
+        weight_decay=default_weight_decay,
         lr=lr,
         eps=eps,
     )
