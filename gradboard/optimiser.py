@@ -23,6 +23,23 @@ def register_optimiser_recursive(module, optimizer):
         register_optimiser_recursive(child, optimizer)
 
 
+def get_adjusted_learning_rate(parameter_name, base_learning_rate) -> float:
+    coefficients = {
+        "embedding": 1.0,
+        "attn.q_proj.weight": 0.8,
+        "attn.k_proj.weight": 0.8,
+        "attn.v_proj.weight": 0.4,
+        "attn.out_proj.weight": 0.4,
+        "ff.linear_in.weight": 0.6,
+        "ff.linear_out.weight": 0.6,
+    }
+    for k, v in coefficients.items():
+        if k in parameter_name:
+            return base_learning_rate * v
+
+    return base_learning_rate
+
+
 def get_optimiser(
     model,
     d_base_model=None,
@@ -58,42 +75,37 @@ def get_optimiser(
             stacklevel=2,
         )
 
-    weight_decay_include = [
-        p for p in model.parameters() if p not in weight_decay_exclude_params
-    ]
+    levels = defaultdict(list)
 
-    weight_decay_levels = defaultdict(list)
-    weight_decay_levels[0.0] = [
-        p for p in model.parameters() if p in weight_decay_exclude_params
-    ]
+    for name, p in model.named_parameters():
 
-    for p in weight_decay_include:
-        if len(p.size()) == 2:
-            width = max(p.size())
-            if d_base_model is not None:
-                scaling_factor = math.sqrt(width) / math.sqrt(d_base_model)
+        adjusted_learning_rate = get_adjusted_learning_rate(name, lr)
+
+        if p not in weight_decay_exclude_params:
+            if len(p.size()) == 2:
+                width = max(p.size())
+                if d_base_model is not None:
+                    scaling_factor = math.sqrt(width) / math.sqrt(d_base_model)
+                else:
+                    scaling_factor = 1
+                adjusted_weight_decay = scaling_factor * weight_decay
+                levels[(adjusted_learning_rate, adjusted_weight_decay)].append(p)
             else:
-                scaling_factor = 1
-            adjusted_weight_decay = scaling_factor * weight_decay
-            weight_decay_levels[adjusted_weight_decay].append(p)
+                levels[(adjusted_learning_rate, 0.0)].append(p)
         else:
-            weight_decay_levels[0.0].append(p)
-
-    default_weight_decay = max(
-        weight_decay_levels.keys(), key=lambda x: len(weight_decay_levels[x])
-    )
+            levels[(adjusted_learning_rate, 0.0)].append(p)
 
     parameter_groups = []
 
-    for k, v in weight_decay_levels.items():
-        if k != default_weight_decay:
-            parameter_groups.append({"params": v, "weight_decay": k})
-
-    parameter_groups.append({"params": weight_decay_levels[default_weight_decay]})
+    for k, v in levels.items():
+        group_learning_rate, group_weight_decay = k
+        parameter_groups.append(
+            {"params": v, "weight_decay": group_weight_decay, "lr": group_learning_rate}
+        )
 
     return optimiser(
         parameter_groups,
-        weight_decay=default_weight_decay,
+        weight_decay=weight_decay,
         lr=lr,
         eps=eps,
     )
