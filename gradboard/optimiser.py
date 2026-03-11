@@ -8,6 +8,16 @@ from torch.optim import AdamW
 
 EXCLUDE_FROM_WEIGHT_DECAY = ["nondecay", "bias", "norm", "embedding", "beta"]
 
+SHARPNESS_DISPARITY_COEFFICIENTS = {
+    "embedding": 1.0,
+    "attn.q_proj.weight": 0.8,
+    "attn.k_proj.weight": 0.8,
+    "attn.v_proj.weight": 0.4,
+    "attn.out_proj.weight": 0.4,
+    "ff.linear_in.weight": 0.6,
+    "ff.linear_out.weight": 0.6,
+}
+
 
 def register_optimiser_recursive(module, optimizer):
     """
@@ -23,19 +33,16 @@ def register_optimiser_recursive(module, optimizer):
         register_optimiser_recursive(child, optimizer)
 
 
-def get_adjusted_learning_rate(parameter_name, base_learning_rate) -> float:
-    coefficients = {
-        "embedding": 1.0,
-        "attn.q_proj.weight": 0.8,
-        "attn.k_proj.weight": 0.8,
-        "attn.v_proj.weight": 0.4,
-        "attn.out_proj.weight": 0.4,
-        "ff.linear_in.weight": 0.6,
-        "ff.linear_out.weight": 0.6,
-    }
-    for k, v in coefficients.items():
-        if k in parameter_name:
-            return base_learning_rate * v
+def get_adjusted_learning_rate(
+    parameter_name, base_learning_rate, coefficients=None
+) -> float:
+
+    if coefficients is None:
+        return base_learning_rate
+    else:
+        for k, v in coefficients.items():
+            if k in parameter_name:
+                return base_learning_rate * v
 
     return base_learning_rate
 
@@ -48,6 +55,7 @@ def get_optimiser(
     weight_decay=1e-2,
     eps=1e-8,
     exclude_keywords=EXCLUDE_FROM_WEIGHT_DECAY,
+    learning_rate_coefficients=None,
 ):
     """
     Set up an optimiser for a transformer model, excluding appropriate submodules
