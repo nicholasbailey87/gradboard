@@ -2,21 +2,9 @@ import math
 import warnings
 from collections import defaultdict
 
-import torch
-from torch.optim.optimizer import Optimizer
 from torch.optim import AdamW
 
 EXCLUDE_FROM_WEIGHT_DECAY = ["nondecay", "bias", "norm", "embedding", "beta"]
-
-SHARPNESS_DISPARITY_COEFFICIENTS = {
-    "embedding": 1.0,
-    "attn.q_proj.weight": 0.8,
-    "attn.k_proj.weight": 0.8,
-    "attn.v_proj.weight": 0.4,
-    "attn.out_proj.weight": 0.4,
-    "ff.linear_in.weight": 0.6,
-    "ff.linear_out.weight": 0.6,
-}
 
 
 def register_optimiser_recursive(module, optimizer):
@@ -49,13 +37,12 @@ def get_adjusted_learning_rate(
 
 def get_optimiser(
     model,
-    d_base_model=None,
+    base_model_embedding_size=None,
     optimiser=AdamW,
     lr=1e-3,
     weight_decay=1e-2,
     eps=1e-8,
     exclude_keywords=EXCLUDE_FROM_WEIGHT_DECAY,
-    learning_rate_coefficients=None,
 ):
     """
     Set up an optimiser for a transformer model, excluding appropriate submodules
@@ -87,21 +74,23 @@ def get_optimiser(
 
     for name, p in model.named_parameters():
 
-        adjusted_learning_rate = get_adjusted_learning_rate(name, lr)
-
-        if p not in weight_decay_exclude_params:
-            if len(p.size()) == 2:
-                width = max(p.size())
-                if d_base_model is not None:
-                    scaling_factor = math.sqrt(width) / math.sqrt(d_base_model)
-                else:
-                    scaling_factor = 1
-                adjusted_weight_decay = scaling_factor * weight_decay
-                levels[(adjusted_learning_rate, adjusted_weight_decay)].append(p)
-            else:
-                levels[(adjusted_learning_rate, 0.0)].append(p)
+        if (len(p.size()) == 2) and (p not in weight_decay_exclude_params):
+            _, in_features = p.size()
+            weight_decay_coefficient = math.sqrt(in_features) / math.sqrt(
+                base_model_embedding_size
+            )
         else:
-            levels[(adjusted_learning_rate, 0.0)].append(p)
+            weight_decay_coefficient = 0.0
+
+        if "ff.linear_in" in name:
+            learning_rate_coefficient = 1 / model.transformer_ff_ratio
+            weight_decay_coefficient *= model.transformer_ff_ratio
+        else:
+            learning_rate_coefficient = 1.0
+
+        levels[
+            (lr * learning_rate_coefficient, weight_decay * weight_decay_coefficient)
+        ].append(p)
 
     parameter_groups = []
 
