@@ -58,7 +58,7 @@ def get_optimiser(
 
     levels = defaultdict(list)
 
-    for name, p in model.named_parameters():
+    for _, p in model.named_parameters():
 
         if (len(p.size()) == 2) and (p not in weight_decay_exclude_params):
             _, in_features = p.size()
@@ -68,15 +68,7 @@ def get_optimiser(
         else:
             weight_decay_coefficient = 0.0
 
-        if "ff.linear_in" in name:
-            learning_rate_coefficient = 1 / math.sqrt(model.transformer_ff_ratio)
-            weight_decay_coefficient *= math.sqrt(model.transformer_ff_ratio)
-        else:
-            learning_rate_coefficient = 1.0
-
-        levels[
-            (lr * learning_rate_coefficient, weight_decay * weight_decay_coefficient)
-        ].append(p)
+        levels[(lr, weight_decay * weight_decay_coefficient)].append(p)
 
     parameter_groups = []
 
