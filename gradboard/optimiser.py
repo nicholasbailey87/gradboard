@@ -65,6 +65,9 @@ def get_optimiser(
             weight_decay_coefficient = math.sqrt(in_features) / math.sqrt(
                 base_model_embedding_size
             )
+        elif len(p.size()) > 2:
+            # Conv layers: Standard weight decay (no muP scaling needed unless scaling CNN width)
+            weight_decay_coefficient = 1.0
         else:
             weight_decay_coefficient = 0.0
 
