@@ -8,14 +8,13 @@ EXCLUDE_FROM_WEIGHT_DECAY = ["nondecay", "bias", "norm", "embedding", "beta"]
 
 SHARPNESS_DISPARITY_COEFFICIENTS = OrderedDict(
     [
-        ("initial_ff", 1.43),
-        ("embedding", 1.43),
-        ("attn.q_proj.weight", 1.14),
-        ("attn.k_proj.weight", 1.14),
-        ("attn.v_proj.weight", 0.57),
-        ("attn.out_proj.weight", 0.57),
-        ("ff.linear_in.weight", 0.86),
-        ("ff.linear_out.weight", 0.86),
+        ("embedding", 10),
+        ("attn.q_proj.weight", 8),
+        ("attn.k_proj.weight", 8),
+        ("attn.v_proj.weight", 4),
+        ("attn.out_proj.weight", 4),
+        ("ff.linear_in.weight", 6),
+        ("ff.linear_out.weight", 6),
     ]
 )
 
