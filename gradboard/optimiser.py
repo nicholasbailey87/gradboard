@@ -35,7 +35,7 @@ def register_optimiser_recursive(module, optimizer):
 
 def get_optimiser(
     model,
-    base_model_embedding_size,
+    d_model,
     optimiser=AdamW,
     lr=1e-3,
     weight_decay=1e-2,
@@ -46,8 +46,21 @@ def get_optimiser(
 ):
     """
     Set up an optimiser for a transformer model, excluding appropriate submodules
-        from weight decay and scaling up weight decay for tensors that have scaled
-        from `d_base_model`
+        from weight decay and scaling up weight decay for tensors whose fan-in is
+        wider than the residual stream.
+
+    A 2-D weight is decayed by `weight_decay * sqrt(fan_in / d_model)`, so the
+    coefficient depends only on the matrix's shape: everything reading from the
+    residual stream sits at exactly 1.0 whatever the width, and only the matrices
+    that genuinely see a wider fan-in — the feed-forward down projection, and a
+    patch-embedding projection whose fan-in is the flattened patch — are scaled
+    up.
+
+    `d_model` is the width of the residual stream, not the muP base width. The
+    two coincide at the base model, but measuring against the base would give
+    every decayed matrix a global factor of sqrt(d_model / base) as the model is
+    widened, which makes the decoupled decay drift with width and stops it
+    transferring under muP.
     """
 
     weight_decay_exclude_names = set()
@@ -64,9 +77,7 @@ def get_optimiser(
             weight_decay_coefficient = 0.0
         elif len(p.size()) == 2:
             _, in_features = p.size()
-            weight_decay_coefficient = math.sqrt(in_features) / math.sqrt(
-                base_model_embedding_size
-            )
+            weight_decay_coefficient = math.sqrt(in_features) / math.sqrt(d_model)
         elif len(p.size()) > 2:
             weight_decay_coefficient = 1.0
         else:
